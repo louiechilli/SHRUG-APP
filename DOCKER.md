@@ -16,7 +16,7 @@
 
 **Or using Docker Compose:**
 ```bash
-docker-compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 ## Prerequisites
@@ -88,10 +88,10 @@ docker-compose -f docker-compose.prod.yml up -d --build
 ### Option 2: Using Docker Compose directly
 ```bash
 # Build and start
-docker-compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml up -d --build
 
 # Run migrations
-docker-compose -f docker-compose.prod.yml exec backend php artisan migrate --force
+docker compose -f docker-compose.prod.yml exec backend php artisan migrate --force
 ```
 
 ### Option 3: Using Make
@@ -112,59 +112,59 @@ After starting, access the services at:
 ### View Logs
 ```bash
 # All services
-docker-compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml logs -f
 
 # Specific service
-docker-compose -f docker-compose.prod.yml logs -f backend
-docker-compose -f docker-compose.prod.yml logs -f frontend
-docker-compose -f docker-compose.prod.yml logs -f signaling
+docker compose -f docker-compose.prod.yml logs -f backend
+docker compose -f docker-compose.prod.yml logs -f frontend
+docker compose -f docker-compose.prod.yml logs -f signaling
 ```
 
 ### Stop Services
 ```bash
-docker-compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml down
 ```
 
 ### Restart Services
 ```bash
-docker-compose -f docker-compose.prod.yml restart
+docker compose -f docker-compose.prod.yml restart
 ```
 
 ### Access Container Shells
 ```bash
 # Backend
-docker-compose -f docker-compose.prod.yml exec backend sh
+docker compose -f docker-compose.prod.yml exec backend sh
 
 # Frontend
-docker-compose -f docker-compose.prod.yml exec frontend sh
+docker compose -f docker-compose.prod.yml exec frontend sh
 
 # Signaling
-docker-compose -f docker-compose.prod.yml exec signaling sh
+docker compose -f docker-compose.prod.yml exec signaling sh
 ```
 
 ### Database Operations
 ```bash
 # Run migrations
-docker-compose -f docker-compose.prod.yml exec backend php artisan migrate --force
+docker compose -f docker-compose.prod.yml exec backend php artisan migrate --force
 
 # Fresh migrations (WARNING: deletes all data)
-docker-compose -f docker-compose.prod.yml exec backend php artisan migrate:fresh --force
+docker compose -f docker-compose.prod.yml exec backend php artisan migrate:fresh --force
 
 # Seed database
-docker-compose -f docker-compose.prod.yml exec backend php artisan db:seed --force
+docker compose -f docker-compose.prod.yml exec backend php artisan db:seed --force
 
 # Access database (PostgreSQL)
-docker-compose -f docker-compose.prod.yml exec db psql -U shrug -d shrug
+docker compose -f docker-compose.prod.yml exec db psql -U shrug -d shrug
 ```
 
 ### Rebuild After Code Changes
 ```bash
 # Rebuild specific service
-docker-compose -f docker-compose.prod.yml build frontend
-docker-compose -f docker-compose.prod.yml up -d frontend
+docker compose -f docker-compose.prod.yml build frontend
+docker compose -f docker-compose.prod.yml up -d frontend
 
 # Rebuild all
-docker-compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 ## Production Considerations
@@ -211,20 +211,20 @@ SIGNALING_PORT=8081
 ```
 
 ### Database Connection Issues
-1. Check database is running: `docker-compose -f docker-compose.prod.yml ps`
+1. Check database is running: `docker compose -f docker-compose.prod.yml ps`
 2. Verify credentials in `.env` match `docker-compose.prod.yml`
-3. Check logs: `docker-compose -f docker-compose.prod.yml logs db`
+3. Check logs: `docker compose -f docker-compose.prod.yml logs db`
 
 ### Frontend Can't Connect to Backend
 1. Verify `VITE_API_BASE_URL` in `.env` matches your backend URL
-2. Rebuild frontend: `docker-compose -f docker-compose.prod.yml build frontend`
+2. Rebuild frontend: `docker compose -f docker-compose.prod.yml build frontend`
 3. Check CORS settings in Laravel backend
 
 ### Permission Issues
 If you see permission errors:
 ```bash
-docker-compose -f docker-compose.prod.yml exec backend chown -R www-data:www-data /var/www/html/storage
-docker-compose -f docker-compose.prod.yml exec backend chmod -R 755 /var/www/html/storage
+docker compose -f docker-compose.prod.yml exec backend chown -R www-data:www-data /var/www/html/storage
+docker compose -f docker-compose.prod.yml exec backend chmod -R 755 /var/www/html/storage
 ```
 
 ## Architecture

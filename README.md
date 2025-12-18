@@ -124,7 +124,7 @@ make start
 
 **Or using Docker Compose directly:**
 ```bash
-docker-compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 ### Prerequisites
@@ -148,7 +148,7 @@ docker-compose -f docker-compose.prod.yml up -d --build
 
 3. Build and start:
    ```bash
-   docker-compose -f docker-compose.prod.yml up -d --build
+   docker compose -f docker-compose.prod.yml up -d --build
    ```
 
 ### Services
@@ -163,22 +163,22 @@ After starting, the following services will be available:
 
 ```bash
 # View logs
-docker-compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml logs -f
 
 # Stop all services
-docker-compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml down
 
 # Restart services
-docker-compose -f docker-compose.prod.yml restart
+docker compose -f docker-compose.prod.yml restart
 
 # Run migrations
-docker-compose -f docker-compose.prod.yml exec backend php artisan migrate --force
+docker compose -f docker-compose.prod.yml exec backend php artisan migrate --force
 
 # Access backend shell
-docker-compose -f docker-compose.prod.yml exec backend sh
+docker compose -f docker-compose.prod.yml exec backend sh
 
 # Rebuild after code changes
-docker-compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 ### Production Considerations
