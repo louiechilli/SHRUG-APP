@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # Laravel Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: shrug-backend
+    restart: unless-stopped
+    volumes:
+      - backend-storage:/var/www/html/storage
+      - backend-cache:/var/www/html/bootstrap/cache
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_URL=${APP_URL:-http://localhost:8000}
+      - DB_CONNECTION=${DB_CONNECTION:-pgsql}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-shrug}
+      - DB_USERNAME=${DB_USERNAME:-shrug}
+      - DB_PASSWORD=${DB_PASSWORD:-shrug_password}
+      - CACHE_DRIVER=file
+      - SESSION_DRIVER=file
+      - QUEUE_CONNECTION=sync
+    networks:
+      - shrug-network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Nginx for Laravel
+  backend-nginx:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.nginx
+    container_name: shrug-backend-nginx
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:80"
+    volumes:
+      - ./backend/public:/var/www/html/public:ro
+      - backend-storage:/var/www/html/storage:ro
+    depends_on:
+      - backend
+    networks:
+      - shrug-network
+
+  # Vue Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
+        - VITE_WS_URL=${VITE_WS_URL:-ws://localhost:8080}
+    container_name: shrug-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    networks:
+      - shrug-network
+
+  # Signaling Server
+  signaling:
+    build:
+      context: ./signaling-server
+      dockerfile: Dockerfile
+    container_name: shrug-signaling
+    restart: unless-stopped
+    ports:
+      - "${SIGNALING_PORT:-8080}:8080"
+    environment:
+      - PORT=8080
+    networks:
+      - shrug-network
+
+  # Database (PostgreSQL)
+  db:
+    image: postgres:16-alpine
+    container_name: shrug-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${DB_DATABASE:-shrug}
+      - POSTGRES_USER=${DB_USERNAME:-shrug}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-shrug_password}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - shrug-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-shrug}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  backend-storage:
+  backend-cache:
+  db-data:
+
+networks:
+  shrug-network:
+    driver: bridge
+

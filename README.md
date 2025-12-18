@@ -102,10 +102,99 @@ npm run preview
 
 The PWA service worker is generated on build. A basic **install prompt CTA** appears when the browser fires `beforeinstallprompt`.
 
+## Docker Production Setup
+
+### Quick Start (One Command)
+
+**Windows (PowerShell):**
+```powershell
+.\start.ps1
+```
+
+**Linux/Mac:**
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+**Or using Make:**
+```bash
+make start
+```
+
+**Or using Docker Compose directly:**
+```bash
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+### Prerequisites
+
+- Docker Desktop (Windows/Mac) or Docker Engine (Linux)
+- Docker Compose v2+
+
+### Configuration
+
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit `.env` with your configuration:
+   - Set `APP_URL` to your production domain
+   - Set `VITE_API_URL` to your backend API URL
+   - Set `VITE_WS_URL` to your WebSocket server URL
+   - Configure database credentials
+   - Add your Agora and WorkOS API keys in `backend/.env`
+
+3. Build and start:
+   ```bash
+   docker-compose -f docker-compose.prod.yml up -d --build
+   ```
+
+### Services
+
+After starting, the following services will be available:
+
+- **Frontend**: http://localhost:80 (or port specified in `.env`)
+- **Backend API**: http://localhost:8000 (or port specified in `.env`)
+- **Signaling Server**: ws://localhost:8080 (or port specified in `.env`)
+
+### Useful Commands
+
+```bash
+# View logs
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Stop all services
+docker-compose -f docker-compose.prod.yml down
+
+# Restart services
+docker-compose -f docker-compose.prod.yml restart
+
+# Run migrations
+docker-compose -f docker-compose.prod.yml exec backend php artisan migrate --force
+
+# Access backend shell
+docker-compose -f docker-compose.prod.yml exec backend sh
+
+# Rebuild after code changes
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+### Production Considerations
+
+1. **Environment Variables**: Ensure all sensitive variables are set in `.env` files
+2. **Database**: The setup uses PostgreSQL by default. For SQLite, modify `docker-compose.prod.yml`
+3. **SSL/TLS**: Use a reverse proxy (nginx/traefik) with SSL certificates in production
+4. **Storage**: Database and storage volumes persist data between container restarts
+5. **Secrets**: Never commit `.env` files. Use Docker secrets or environment variable management
+
 ## Deployment Notes (decoupled)
 
 - **Frontend**: host as static assets (Vercel/Netlify/S3/Cloudflare Pages)
 - **Backend**: deploy Laravel normally (Forge/Vapor/etc.)
 - Update `VITE_API_BASE_URL` to point at your production API (e.g. `https://api.yourapp.com/api/v1`)
+
+**Or use Docker**: The Docker setup above provides a complete production-ready environment that can be deployed to any Docker-compatible platform (AWS ECS, Google Cloud Run, Azure Container Instances, etc.)
 
 
