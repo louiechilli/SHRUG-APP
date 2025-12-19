@@ -66,16 +66,26 @@ export async function handleCallback(code: string, state: string): Promise<{ use
 
   // Exchange the code for tokens via your backend
   // WorkOS requires server-side token exchange for security
-  // Use production URL if localhost is detected (fallback for build issues)
-  let apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.getshrug.app/api/v1'
+  // FORCE production URL - always use production in deployed environment
+  const envApiUrl = import.meta.env.VITE_API_BASE_URL
+  const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
   
-  // If we're in production and still have localhost, use production URL
-  if (apiUrl.includes('localhost') && window.location.hostname !== 'localhost') {
-    console.warn('Localhost API URL detected in production, using production URL instead')
-    apiUrl = 'https://api.getshrug.app/api/v1'
+  // Always use production URL in production, ignore env variable if it's localhost
+  let apiUrl = 'https://api.getshrug.app/api/v1'
+  if (!isProduction) {
+    // Only use env variable in development
+    apiUrl = envApiUrl || 'http://localhost:8000/api/v1'
+  } else {
+    // In production, check if env var is localhost and warn
+    if (envApiUrl && envApiUrl.includes('localhost')) {
+      console.warn('⚠️ Localhost API URL detected in production build. Using production URL instead.')
+      console.warn('⚠️ Please rebuild with correct VITE_API_BASE_URL in .env file')
+    }
   }
   
-  console.log('WorkOS Callback API URL:', apiUrl)
+  console.log('WorkOS Callback API URL (final):', apiUrl)
+  console.log('Environment:', { envApiUrl, isProduction, hostname: window.location.hostname })
+  
   const response = await fetch(`${apiUrl}/auth/workos/callback`, {
     method: 'POST',
     headers: {
