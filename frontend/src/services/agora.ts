@@ -71,11 +71,11 @@ export function useAgora() {
         remoteUsers.set(user.uid, true)
         
         // In P2P mode, user-published can fire immediately after user-joined,
-        // but the SDK needs time to establish the peer connection and process
-        // the media stream before subscription will work.
-        // Use a conservative initial delay of 1000ms to ensure SDK is ready.
-        console.log(`⏳ Waiting 1000ms before subscribing to user ${user.uid} ${mediaType}...`)
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // but the SDK needs significant time to establish the peer connection and process
+        // the media stream before subscription will work. Based on testing, 2500ms seems
+        // to be the minimum time needed for P2P connection to be ready for subscription.
+        console.log(`⏳ Waiting 2500ms for P2P connection to be ready before subscribing to user ${user.uid} ${mediaType}...`)
+        await new Promise(resolve => setTimeout(resolve, 2500))
         
         // Retry subscribe with exponential backoff
         let retries = 0
