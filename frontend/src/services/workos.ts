@@ -66,7 +66,15 @@ export async function handleCallback(code: string, state: string): Promise<{ use
 
   // Exchange the code for tokens via your backend
   // WorkOS requires server-side token exchange for security
-  const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.getshrug.app/api/v1'
+  // Use production URL if localhost is detected (fallback for build issues)
+  let apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.getshrug.app/api/v1'
+  
+  // If we're in production and still have localhost, use production URL
+  if (apiUrl.includes('localhost') && window.location.hostname !== 'localhost') {
+    console.warn('Localhost API URL detected in production, using production URL instead')
+    apiUrl = 'https://api.getshrug.app/api/v1'
+  }
+  
   console.log('WorkOS Callback API URL:', apiUrl)
   const response = await fetch(`${apiUrl}/auth/workos/callback`, {
     method: 'POST',
