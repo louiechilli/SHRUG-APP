@@ -8,6 +8,7 @@ import MobileLayout from '../layouts/MobileLayout.vue'
 const router = useRouter()
 
 const loading = ref(false)
+const error = ref<string | null>(null)
 
 function loginWithGoogle() {
   loading.value = true

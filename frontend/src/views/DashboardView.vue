@@ -92,11 +92,13 @@ function stopMediaStream() {
   agora.stopLocalTracks()
 }
 
-async function logout() {
-  endCall()
-  signaling.disconnect()
-  stopMediaStream()
-  await auth.logout()
+// Logout function (currently unused but may be needed)
+// async function logout() {
+//   endCall()
+//   signaling.disconnect()
+//   stopMediaStream()
+//   await auth.logout()
+// }
   router.push('/login')
 }
 
@@ -189,6 +191,10 @@ function setupSignalingHandlers() {
     matchedPeer.value = true
     
     // Get token and join Agora channel while showing "Meet X" screen
+    if (!currentMatchChannel) {
+      console.error('No channel name available')
+      return
+    }
     try {
       const { data: tokenData } = await api.post('/agora/token', { channel_name: currentMatchChannel })
       await agora.joinChannel(currentMatchChannel, tokenData.uid, tokenData.token)
@@ -351,11 +357,12 @@ const genderIcon = computed(() => {
   }
 })
 
-const initials = computed(() => {
-  const name = auth.user?.name?.trim() ?? 'U'
-  const parts = name.split(/\s+/).slice(0, 2)
-  return parts.map((p) => p[0]?.toUpperCase()).join('')
-})
+// Initials computed (currently unused but may be needed for avatar display)
+// const initials = computed(() => {
+//   const name = auth.user?.name?.trim() ?? 'U'
+//   const parts = name.split(/\s+/).slice(0, 2)
+//   return parts.map((p) => p[0]?.toUpperCase()).join('')
+// })
 
 onMounted(async () => {
   // Initialize local video

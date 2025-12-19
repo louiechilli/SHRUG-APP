@@ -58,11 +58,15 @@ QUEUE_CONNECTION=sync
     Write-Host "✅ Created backend/.env file" -ForegroundColor Green
 }
 
-# Build and start containers
+# Start database first (it doesn't need building)
+Write-Host "🗄️  Starting database container..." -ForegroundColor Cyan
+docker compose -f docker-compose.prod.yml up -d db
+
+# Build and start other containers
 Write-Host "🔨 Building Docker images..." -ForegroundColor Cyan
 docker compose -f docker-compose.prod.yml build
 
-Write-Host "🚀 Starting containers..." -ForegroundColor Cyan
+Write-Host "🚀 Starting all containers..." -ForegroundColor Cyan
 docker compose -f docker-compose.prod.yml up -d
 
 # Wait for database to be ready

@@ -40,7 +40,9 @@ export function useWebRTC() {
     }
 
     pc.ontrack = (event) => {
-      remoteStream.value = event.streams[0]
+      if (event.streams && event.streams.length > 0) {
+        remoteStream.value = event.streams[0]
+      }
     }
 
     pc.onconnectionstatechange = () => {

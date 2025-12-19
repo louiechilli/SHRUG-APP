@@ -1,9 +1,9 @@
 import AgoraRTC, {
-  IAgoraRTCClient,
-  ICameraVideoTrack,
-  IMicrophoneAudioTrack,
-  IRemoteVideoTrack,
-  IRemoteAudioTrack,
+  type IAgoraRTCClient,
+  type ICameraVideoTrack,
+  type IMicrophoneAudioTrack,
+  type IRemoteVideoTrack,
+  type IRemoteAudioTrack,
 } from 'agora-rtc-sdk-ng'
 import { ref } from 'vue'
 
@@ -68,23 +68,21 @@ export function useAgora() {
         
         while (retries < maxRetries) {
           try {
-            // Get fresh user reference from client.remoteUsers
+            await client.value!.subscribe(user, mediaType)
+            console.log('Subscribed to', mediaType, 'track')
+            
+            // Get fresh user reference from client.remoteUsers after subscribe
             const remoteUser = client.value!.remoteUsers.find(u => u.uid === user.uid)
-            if (!remoteUser) {
-              throw new Error('User not found in remoteUsers')
-            }
-            
-            await client.value!.subscribe(remoteUser, mediaType)
-            console.log('Subscribed to', mediaType, 'track:', mediaType === 'video' ? remoteUser.videoTrack : remoteUser.audioTrack)
-            
-            if (mediaType === 'video') {
-              remoteVideoTrack.value = remoteUser.videoTrack || null
-              remoteUid.value = remoteUser.uid
-              console.log('Remote video track set:', remoteVideoTrack.value)
-            }
-            if (mediaType === 'audio') {
-              remoteAudioTrack.value = remoteUser.audioTrack || null
-              remoteUser.audioTrack?.play()
+            if (remoteUser) {
+              if (mediaType === 'video') {
+                remoteVideoTrack.value = remoteUser.videoTrack || null
+                remoteUid.value = remoteUser.uid
+                console.log('Remote video track set:', remoteVideoTrack.value)
+              }
+              if (mediaType === 'audio') {
+                remoteAudioTrack.value = remoteUser.audioTrack || null
+                remoteUser.audioTrack?.play()
+              }
             }
             break // Success, exit loop
           } catch (err) {
@@ -127,7 +125,11 @@ export function useAgora() {
 
     // Publish local tracks if they exist
     if (localAudioTrack.value && localVideoTrack.value) {
-      await client.value.publish([localAudioTrack.value, localVideoTrack.value])
+      await client.value.publish([localAudioTrack.value, localVideoTrack.value] as any)
+    } else if (localAudioTrack.value) {
+      await client.value.publish(localAudioTrack.value)
+    } else if (localVideoTrack.value) {
+      await client.value.publish(localVideoTrack.value)
     }
 
     return client.value

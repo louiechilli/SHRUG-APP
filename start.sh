@@ -57,11 +57,15 @@ EOF
     echo "✅ Created backend/.env file"
 fi
 
-# Build and start containers
+# Start database first (it doesn't need building)
+echo "🗄️  Starting database container..."
+docker compose -f docker-compose.prod.yml up -d db
+
+# Build and start other containers
 echo "🔨 Building Docker images..."
 docker compose -f docker-compose.prod.yml build
 
-echo "🚀 Starting containers..."
+echo "🚀 Starting all containers..."
 docker compose -f docker-compose.prod.yml up -d
 
 # Wait for database to be ready
