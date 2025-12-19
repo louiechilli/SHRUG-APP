@@ -8,7 +8,13 @@ import AgoraRTC, {
 import { ref } from 'vue'
 
 const APP_ID = import.meta.env.VITE_AGORA_APP_ID
-console.log('Agora APP_ID:', APP_ID)
+
+// Validate Agora APP_ID is configured
+if (!APP_ID) {
+  console.error('VITE_AGORA_APP_ID is not configured. Please set it in your environment variables.')
+} else {
+  console.log('Agora APP_ID:', APP_ID ? `${APP_ID.substring(0, 10)}...` : 'NOT SET')
+}
 
 // Singleton state
 const client = ref<IAgoraRTCClient | null>(null)

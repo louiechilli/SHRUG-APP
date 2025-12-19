@@ -54,6 +54,7 @@ services:
         - VITE_WS_URL=${VITE_WS_URL:-wss://getshrug.app:8080}
         - VITE_WORKOS_CLIENT_ID=${VITE_WORKOS_CLIENT_ID}
         - VITE_WORKOS_REDIRECT_URI=${VITE_WORKOS_REDIRECT_URI:-https://getshrug.app/auth/callback}
+        - VITE_AGORA_APP_ID=${VITE_AGORA_APP_ID}
     container_name: shrug-frontend
     restart: unless-stopped
     networks:
