@@ -54,6 +54,8 @@ services:
       args:
         - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://api.getshrug.app/api/v1}
         - VITE_WS_URL=${VITE_WS_URL:-wss://getshrug.app:8080}
+        - VITE_WORKOS_CLIENT_ID=${VITE_WORKOS_CLIENT_ID}
+        - VITE_WORKOS_REDIRECT_URI=${VITE_WORKOS_REDIRECT_URI:-https://getshrug.app/auth/callback}
     container_name: shrug-frontend
     restart: unless-stopped
     networks:
