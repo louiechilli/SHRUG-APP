@@ -68,6 +68,12 @@ export function useAgora() {
         // Mark user as available
         remoteUsers.set(user.uid, true)
         
+        // Add initial delay to ensure Agora SDK has synchronized the user state
+        // This prevents "user is not in the channel" errors that occur when
+        // subscription happens too quickly after user-published event
+        // Increased delay to 500ms for better reliability
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
         // Retry subscribe with exponential backoff
         let retries = 0
         const maxRetries = 5
@@ -91,11 +97,13 @@ export function useAgora() {
               }
             }
             break // Success, exit loop
-          } catch (err) {
+          } catch (err: any) {
             retries++
             if (retries < maxRetries) {
-              console.log(`Subscribe retry ${retries}/${maxRetries} for ${mediaType}...`)
-              await new Promise(r => setTimeout(r, 500 * retries))
+              // Use longer delays: 800ms, 1200ms, 1600ms, 2000ms
+              const delay = 400 + (400 * retries)
+              console.log(`Subscribe retry ${retries}/${maxRetries} for ${mediaType} (waiting ${delay}ms)...`)
+              await new Promise(r => setTimeout(r, delay))
             } else {
               console.warn('Failed to subscribe to user after retries:', err)
             }
