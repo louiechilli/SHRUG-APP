@@ -57,10 +57,18 @@ export function useAgora() {
       client.value = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' })
       
       // Setup event handlers
+      // Track which users we've subscribed to (shared across events)
+      const subscribedUsers = new Set<string | number>()
+      
       client.value.on('user-joined', (user) => {
         console.log('User joined channel:', user.uid)
         remoteUsers.set(user.uid, true)
+        // Reset subscription tracking for this user
+        subscribedUsers.delete(user.uid)
       })
+      
+      // Track which users we've already subscribed to (to avoid duplicate subscriptions)
+      const subscribedUsers = new Set<string | number>()
       
       client.value.on('user-published', async (user, mediaType) => {
         console.log('=== USER PUBLISHED EVENT ===')
@@ -70,87 +78,64 @@ export function useAgora() {
         // Mark user as available
         remoteUsers.set(user.uid, true)
         
-        // In P2P mode, user-published can fire immediately after user-joined,
-        // but the SDK needs significant time to establish the peer connection and process
-        // the media stream before subscription will work. Based on testing, 2500ms seems
-        // to be the minimum time needed for P2P connection to be ready for subscription.
-        console.log(`⏳ Waiting 2500ms for P2P connection to be ready before subscribing to user ${user.uid} ${mediaType}...`)
-        await new Promise(resolve => setTimeout(resolve, 2500))
+        // In P2P mode, wait for both audio and video to be published before subscribing
+        // This avoids the "user is not in the channel" error that occurs when subscribing
+        // too early in the P2P connection lifecycle
+        if (subscribedUsers.has(user.uid)) {
+          console.log(`⏭️ Already subscribed to user ${user.uid}, skipping...`)
+          return
+        }
+        
+        // Wait longer for P2P connection to be fully ready
+        console.log(`⏳ Waiting 3000ms for P2P connection to be fully ready before subscribing to user ${user.uid}...`)
+        await new Promise(resolve => setTimeout(resolve, 3000))
         
         // Retry subscribe with exponential backoff
         let retries = 0
-        const maxRetries = 5
+        const maxRetries = 8
         
         while (retries < maxRetries) {
           try {
-            console.log(`🔄 Attempting to subscribe to user ${user.uid} ${mediaType}...`)
-            await client.value!.subscribe(user, mediaType)
+            console.log(`🔄 Attempting to subscribe to user ${user.uid} (all tracks) - attempt ${retries + 1}/${maxRetries}...`)
+            // Subscribe without mediaType to subscribe to all available tracks at once
+            // This works better in P2P mode
+            await client.value!.subscribe(user, undefined)
+            console.log('✅ Successfully subscribed to user', user.uid)
+            subscribedUsers.add(user.uid)
             console.log('✅ Successfully subscribed to', mediaType, 'track for user', user.uid)
             
             // Wait for tracks to be populated after subscription
-            // Poll up to 1 second for tracks to become available
-            let trackFound = false
-            let pollAttempts = 0
-            const maxPollAttempts = 10
-            const pollInterval = 100
+            // Poll up to 2 seconds for tracks to become available
+            await new Promise(resolve => setTimeout(resolve, 500))
             
-            while (!trackFound && pollAttempts < maxPollAttempts) {
-              await new Promise(resolve => setTimeout(resolve, pollInterval))
-              
-              // Get fresh user reference from client.remoteUsers after subscribe
-              const remoteUser = client.value!.remoteUsers.find(u => u.uid === user.uid)
-              
-              if (remoteUser) {
-                if (mediaType === 'video') {
-                  const videoTrack = remoteUser.videoTrack
-                  if (videoTrack) {
-                    console.log('✅ Video track found after', (pollAttempts + 1) * pollInterval, 'ms, Track ID:', videoTrack.getTrackId())
-                    remoteVideoTrack.value = videoTrack
-                    remoteUid.value = remoteUser.uid
-                    trackFound = true
-                    console.log('✅ Remote video track set successfully - track will play via watcher in DashboardView')
-                  }
-                }
-                if (mediaType === 'audio') {
-                  const audioTrack = remoteUser.audioTrack
-                  if (audioTrack) {
-                    console.log('✅ Audio track found after', (pollAttempts + 1) * pollInterval, 'ms, Track ID:', audioTrack.getTrackId())
-                    remoteAudioTrack.value = audioTrack
-                    try {
-                      // audioTrack.play() returns void, not a promise
-                      audioTrack.play()
-                      trackFound = true
-                      console.log('✅ Remote audio track set and playing successfully')
-                    } catch (playErr) {
-                      console.error('❌ Failed to play audio track:', playErr)
-                      // Track is set even if play fails - browser autoplay restrictions might prevent it
-                      trackFound = true
-                    }
-                  }
-                }
-              }
-              
-              if (!trackFound) {
-                pollAttempts++
-                if (pollAttempts < maxPollAttempts) {
-                  console.log(`Waiting for ${mediaType} track... (attempt ${pollAttempts + 1}/${maxPollAttempts})`)
-                }
-              }
-            }
+            // Get fresh user reference from client.remoteUsers after subscribe
+            const remoteUser = client.value!.remoteUsers.find(u => u.uid === user.uid)
             
-            if (!trackFound) {
-              const remoteUser = client.value!.remoteUsers.find(u => u.uid === user.uid)
-              console.warn(`⚠ ${mediaType} track not found after ${maxPollAttempts * pollInterval}ms`)
-              if (remoteUser) {
-                console.warn('Remote user exists but track is null:', {
-                  hasVideoTrack: !!remoteUser.videoTrack,
-                  hasAudioTrack: !!remoteUser.audioTrack,
-                  uid: remoteUser.uid
-                })
+            if (remoteUser) {
+              if (remoteUser.videoTrack) {
+                console.log('✅ Video track found, Track ID:', remoteUser.videoTrack.getTrackId())
+                remoteVideoTrack.value = remoteUser.videoTrack
+                remoteUid.value = remoteUser.uid
+                console.log('✅ Remote video track set successfully')
               } else {
-                console.warn('⚠ Remote user not found in client.remoteUsers')
-                console.log('Available remote users:', client.value!.remoteUsers.map(u => u.uid))
+                console.warn('⚠ Video track not available after subscription')
               }
+              
+              if (remoteUser.audioTrack) {
+                console.log('✅ Audio track found, Track ID:', remoteUser.audioTrack.getTrackId())
+                remoteAudioTrack.value = remoteUser.audioTrack
+                try {
+                  remoteUser.audioTrack.play()
+                  console.log('✅ Remote audio track set and playing successfully')
+                } catch (playErr) {
+                  console.error('❌ Failed to play audio track:', playErr)
+                }
+              } else {
+                console.warn('⚠ Audio track not available after subscription')
+              }
+            } else {
+              console.warn('⚠ Remote user not found in client.remoteUsers after subscription')
+              console.log('Available remote users:', client.value!.remoteUsers.map(u => u.uid))
             }
             break // Success, exit loop
           } catch (err: any) {
@@ -181,6 +166,7 @@ export function useAgora() {
       client.value.on('user-left', (user) => {
         console.log('User left:', user.uid)
         remoteUsers.delete(user.uid)
+        subscribedUsers.delete(user.uid)
         remoteVideoTrack.value = null
         remoteAudioTrack.value = null
         remoteUid.value = null
