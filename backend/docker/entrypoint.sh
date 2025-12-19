@@ -44,9 +44,21 @@ EOF
 fi
 
 # Generate application key if not set
-if [ -z "$APP_KEY" ] || ! grep -q "APP_KEY=base64:" /var/www/html/.env 2>/dev/null; then
+# Check if APP_KEY exists in .env file
+if ! grep -q "^APP_KEY=base64:" /var/www/html/.env 2>/dev/null; then
     echo "🔑 Generating application key..."
-    php artisan key:generate --force
+    # Generate key using PHP directly (faster and doesn't require Laravel bootstrap)
+    KEY=$(php -r "echo 'base64:' . base64_encode(random_bytes(32));")
+    if grep -q "^APP_KEY=" /var/www/html/.env 2>/dev/null; then
+        # Replace existing APP_KEY line
+        sed -i "s|^APP_KEY=.*|APP_KEY=$KEY|" /var/www/html/.env
+    else
+        # Append APP_KEY if it doesn't exist (before the first blank line or at the end)
+        sed -i "1a APP_KEY=$KEY" /var/www/html/.env 2>/dev/null || echo "APP_KEY=$KEY" >> /var/www/html/.env
+    fi
+    echo "✅ Application key generated"
+else
+    echo "✅ Application key already exists"
 fi
 
 # Run migrations
