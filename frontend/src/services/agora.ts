@@ -117,7 +117,8 @@ export function useAgora() {
                     console.log('✅ Audio track found after', (pollAttempts + 1) * pollInterval, 'ms, Track ID:', audioTrack.getTrackId())
                     remoteAudioTrack.value = audioTrack
                     try {
-                      await audioTrack.play()
+                      // audioTrack.play() returns void, not a promise
+                      audioTrack.play()
                       trackFound = true
                       console.log('✅ Remote audio track set and playing successfully')
                     } catch (playErr) {
