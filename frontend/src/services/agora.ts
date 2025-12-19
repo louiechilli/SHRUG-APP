@@ -82,31 +82,77 @@ export function useAgora() {
         while (retries < maxRetries) {
           try {
             await client.value!.subscribe(user, mediaType)
-            console.log('Subscribed to', mediaType, 'track for user', user.uid)
+            console.log('✓ Successfully subscribed to', mediaType, 'track for user', user.uid)
             
-            // Get fresh user reference from client.remoteUsers after subscribe
-            const remoteUser = client.value!.remoteUsers.find(u => u.uid === user.uid)
-            if (remoteUser) {
-              if (mediaType === 'video') {
-                remoteVideoTrack.value = remoteUser.videoTrack || null
-                remoteUid.value = remoteUser.uid
-                console.log('Remote video track set:', remoteVideoTrack.value)
+            // Wait for tracks to be populated after subscription
+            // Poll up to 1 second for tracks to become available
+            let trackFound = false
+            let pollAttempts = 0
+            const maxPollAttempts = 10
+            const pollInterval = 100
+            
+            while (!trackFound && pollAttempts < maxPollAttempts) {
+              await new Promise(resolve => setTimeout(resolve, pollInterval))
+              
+              // Get fresh user reference from client.remoteUsers after subscribe
+              const remoteUser = client.value!.remoteUsers.find(u => u.uid === user.uid)
+              
+              if (remoteUser) {
+                if (mediaType === 'video') {
+                  const videoTrack = remoteUser.videoTrack
+                  if (videoTrack) {
+                    console.log('✓ Video track found after', (pollAttempts + 1) * pollInterval, 'ms, Track ID:', videoTrack.getTrackId())
+                    remoteVideoTrack.value = videoTrack
+                    remoteUid.value = remoteUser.uid
+                    trackFound = true
+                    console.log('✓ Remote video track set successfully')
+                  }
+                }
+                if (mediaType === 'audio') {
+                  const audioTrack = remoteUser.audioTrack
+                  if (audioTrack) {
+                    console.log('✓ Audio track found after', (pollAttempts + 1) * pollInterval, 'ms, Track ID:', audioTrack.getTrackId())
+                    remoteAudioTrack.value = audioTrack
+                    audioTrack.play()
+                    trackFound = true
+                    console.log('✓ Remote audio track set and playing')
+                  }
+                }
               }
-              if (mediaType === 'audio') {
-                remoteAudioTrack.value = remoteUser.audioTrack || null
-                remoteUser.audioTrack?.play()
+              
+              if (!trackFound) {
+                pollAttempts++
+                if (pollAttempts < maxPollAttempts) {
+                  console.log(`Waiting for ${mediaType} track... (attempt ${pollAttempts + 1}/${maxPollAttempts})`)
+                }
+              }
+            }
+            
+            if (!trackFound) {
+              const remoteUser = client.value!.remoteUsers.find(u => u.uid === user.uid)
+              console.warn(`⚠ ${mediaType} track not found after ${maxPollAttempts * pollInterval}ms`)
+              if (remoteUser) {
+                console.warn('Remote user exists but track is null:', {
+                  hasVideoTrack: !!remoteUser.videoTrack,
+                  hasAudioTrack: !!remoteUser.audioTrack,
+                  uid: remoteUser.uid
+                })
+              } else {
+                console.warn('⚠ Remote user not found in client.remoteUsers')
+                console.log('Available remote users:', client.value!.remoteUsers.map(u => u.uid))
               }
             }
             break // Success, exit loop
           } catch (err: any) {
             retries++
+            console.error(`✗ Subscribe attempt ${retries} failed:`, err)
             if (retries < maxRetries) {
               // Use longer delays: 800ms, 1200ms, 1600ms, 2000ms
               const delay = 400 + (400 * retries)
-              console.log(`Subscribe retry ${retries}/${maxRetries} for ${mediaType} (waiting ${delay}ms)...`)
+              console.log(`Retrying subscription in ${delay}ms... (attempt ${retries + 1}/${maxRetries})`)
               await new Promise(r => setTimeout(r, delay))
             } else {
-              console.warn(`Failed to subscribe to user ${user.uid} ${mediaType} after ${maxRetries} retries:`, err)
+              console.error(`✗ Failed to subscribe to user ${user.uid} ${mediaType} after ${maxRetries} retries:`, err)
             }
           }
         }
