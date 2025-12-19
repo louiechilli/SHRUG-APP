@@ -155,9 +155,17 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 After starting, the following services will be available:
 
+**With Nginx Reverse Proxy (Production):**
+- **Frontend**: https://getshrug.app
+- **Backend API**: https://api.getshrug.app
+- **Signaling Server**: wss://getshrug.app:8080
+
+**Without Nginx (Development):**
 - **Frontend**: http://localhost:80 (or port specified in `.env`)
 - **Backend API**: http://localhost:8000 (or port specified in `.env`)
 - **Signaling Server**: ws://localhost:8080 (or port specified in `.env`)
+
+> **Note:** See [NGINX_SETUP.md](./NGINX_SETUP.md) for detailed nginx reverse proxy setup instructions.
 
 ### Useful Commands
 

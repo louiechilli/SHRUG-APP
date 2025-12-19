@@ -21,11 +21,14 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 After running the command, you'll have:
 
-- ✅ **Frontend** running at http://localhost:80
-- ✅ **Backend API** running at http://localhost:8000
-- ✅ **Signaling Server** running at ws://localhost:8080
+- ✅ **Frontend** running at http://localhost:80 (or https://getshrug.app with nginx)
+- ✅ **Backend API** running at http://localhost:8000 (or https://api.getshrug.app with nginx)
+- ✅ **Signaling Server** running at ws://localhost:8080 (or wss://getshrug.app:8080 with nginx)
 - ✅ **PostgreSQL Database** running and ready
+- ✅ **Nginx Reverse Proxy** (if configured) handling SSL and routing
 - ✅ All services connected and configured
+
+> **For production with custom domains:** See [NGINX_SETUP.md](./NGINX_SETUP.md) for nginx reverse proxy setup.
 
 ## First Time Setup
 
