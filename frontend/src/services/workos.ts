@@ -2,14 +2,14 @@
 const WORKOS_CLIENT_ID = import.meta.env.VITE_WORKOS_CLIENT_ID
 const REDIRECT_URI = import.meta.env.VITE_WORKOS_REDIRECT_URI ?? `${window.location.origin}/auth/callback`
 
-// Debug logging (remove in production)
-if (import.meta.env.DEV) {
-  console.log('WorkOS Configuration:', {
-    clientId: WORKOS_CLIENT_ID ? `${WORKOS_CLIENT_ID.substring(0, 10)}...` : 'NOT SET',
-    redirectUri: REDIRECT_URI,
-    hasClientId: !!WORKOS_CLIENT_ID
-  })
-}
+// Debug logging (always log in browser console for troubleshooting)
+console.log('WorkOS Configuration:', {
+  clientId: WORKOS_CLIENT_ID ? `${WORKOS_CLIENT_ID.substring(0, 20)}...` : 'NOT SET - THIS IS THE PROBLEM!',
+  fullClientId: WORKOS_CLIENT_ID || 'UNDEFINED',
+  redirectUri: REDIRECT_URI,
+  hasClientId: !!WORKOS_CLIENT_ID,
+  envCheck: import.meta.env.VITE_WORKOS_CLIENT_ID || 'NOT IN ENV'
+})
 
 // Validate WorkOS client ID is configured
 if (!WORKOS_CLIENT_ID) {
@@ -42,12 +42,13 @@ export function getAuthorizationUrl(provider: 'GoogleOAuth' | 'AppleOAuth' | 'Mi
 
   const authUrl = `https://api.workos.com/user_management/authorize?${params.toString()}`
   
-  // Debug logging
-  console.log('WorkOS Authorization URL:', {
+  // Debug logging - always show in console
+  console.log('WorkOS Authorization Request:', {
     clientId: WORKOS_CLIENT_ID,
     redirectUri: REDIRECT_URI,
     provider,
-    url: authUrl
+    fullUrl: authUrl,
+    paramsObject: Object.fromEntries(params)
   })
 
   return authUrl
