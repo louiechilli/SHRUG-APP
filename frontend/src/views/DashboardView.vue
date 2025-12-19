@@ -98,9 +98,8 @@ function stopMediaStream() {
 //   signaling.disconnect()
 //   stopMediaStream()
 //   await auth.logout()
+//   router.push('/login')
 // }
-  router.push('/login')
-}
 
 async function startCall() {
   callLoading.value = true
