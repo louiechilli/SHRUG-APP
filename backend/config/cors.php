@@ -19,6 +19,8 @@ return [
     'allowed_origins' => [
         'http://localhost:5173',
         'https://442ff7d37ad5.ngrok-free.app',
+        'https://getshrug.app',
+        'http://getshrug.app', // Fallback for HTTP
     ],
 
     'allowed_origins_patterns' => [],
