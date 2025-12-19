@@ -20,8 +20,31 @@ if [ "$DB_CONNECTION" != "sqlite" ]; then
     echo "✅ Database is ready!"
 fi
 
+# Create .env file if it doesn't exist
+if [ ! -f /var/www/html/.env ]; then
+    echo "📝 Creating .env file from environment variables..."
+    cat > /var/www/html/.env << EOF
+APP_NAME=${APP_NAME:-Shrug}
+APP_ENV=${APP_ENV:-production}
+APP_DEBUG=${APP_DEBUG:-false}
+APP_URL=${APP_URL:-http://localhost:8000}
+
+DB_CONNECTION=${DB_CONNECTION:-pgsql}
+DB_HOST=${DB_HOST:-db}
+DB_PORT=${DB_PORT:-5432}
+DB_DATABASE=${DB_DATABASE:-shrug}
+DB_USERNAME=${DB_USERNAME:-shrug}
+DB_PASSWORD=${DB_PASSWORD:-shrug_password}
+
+CACHE_DRIVER=${CACHE_DRIVER:-file}
+SESSION_DRIVER=${SESSION_DRIVER:-file}
+QUEUE_CONNECTION=${QUEUE_CONNECTION:-sync}
+EOF
+    echo "✅ Created .env file"
+fi
+
 # Generate application key if not set
-if [ -z "$APP_KEY" ]; then
+if [ -z "$APP_KEY" ] || ! grep -q "APP_KEY=base64:" /var/www/html/.env 2>/dev/null; then
     echo "🔑 Generating application key..."
     php artisan key:generate --force
 fi

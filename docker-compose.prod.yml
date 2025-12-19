@@ -9,6 +9,7 @@ services:
     container_name: shrug-backend
     restart: unless-stopped
     volumes:
+      - ./backend/.env:/var/www/html/.env:ro
       - backend-storage:/var/www/html/storage
       - backend-cache:/var/www/html/bootstrap/cache
     environment:
