@@ -17,10 +17,23 @@ ARG VITE_API_BASE_URL
 ARG VITE_WS_URL
 ARG VITE_WORKOS_CLIENT_ID
 ARG VITE_WORKOS_REDIRECT_URI
+
+# Debug: Print build args (remove in production if sensitive)
+RUN echo "Build args:" && \
+    echo "VITE_API_BASE_URL=${VITE_API_BASE_URL}" && \
+    echo "VITE_WS_URL=${VITE_WS_URL}" && \
+    echo "VITE_WORKOS_CLIENT_ID=${VITE_WORKOS_CLIENT_ID:0:20}..." && \
+    echo "VITE_WORKOS_REDIRECT_URI=${VITE_WORKOS_REDIRECT_URI}"
+
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_WS_URL=$VITE_WS_URL
 ENV VITE_WORKOS_CLIENT_ID=$VITE_WORKOS_CLIENT_ID
 ENV VITE_WORKOS_REDIRECT_URI=$VITE_WORKOS_REDIRECT_URI
+
+# Verify environment variables are set before build
+RUN if [ -z "$VITE_WORKOS_CLIENT_ID" ]; then \
+      echo "ERROR: VITE_WORKOS_CLIENT_ID is not set!" && exit 1; \
+    fi
 
 # Build for production
 RUN npm run build
