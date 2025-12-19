@@ -63,7 +63,9 @@ export function useAgora() {
       })
       
       client.value.on('user-published', async (user, mediaType) => {
+        console.log('=== USER PUBLISHED EVENT ===')
         console.log('User published:', user.uid, mediaType)
+        console.log('Timestamp:', new Date().toISOString())
         
         // Mark user as available
         remoteUsers.set(user.uid, true)
@@ -72,7 +74,7 @@ export function useAgora() {
         // but the SDK needs time to establish the peer connection and process
         // the media stream before subscription will work.
         // Use a conservative initial delay of 1000ms to ensure SDK is ready.
-        console.log(`Waiting 1000ms before subscribing to user ${user.uid} ${mediaType}...`)
+        console.log(`⏳ Waiting 1000ms before subscribing to user ${user.uid} ${mediaType}...`)
         await new Promise(resolve => setTimeout(resolve, 1000))
         
         // Retry subscribe with exponential backoff
@@ -81,8 +83,9 @@ export function useAgora() {
         
         while (retries < maxRetries) {
           try {
+            console.log(`🔄 Attempting to subscribe to user ${user.uid} ${mediaType}...`)
             await client.value!.subscribe(user, mediaType)
-            console.log('✓ Successfully subscribed to', mediaType, 'track for user', user.uid)
+            console.log('✅ Successfully subscribed to', mediaType, 'track for user', user.uid)
             
             // Wait for tracks to be populated after subscription
             // Poll up to 1 second for tracks to become available
@@ -101,21 +104,27 @@ export function useAgora() {
                 if (mediaType === 'video') {
                   const videoTrack = remoteUser.videoTrack
                   if (videoTrack) {
-                    console.log('✓ Video track found after', (pollAttempts + 1) * pollInterval, 'ms, Track ID:', videoTrack.getTrackId())
+                    console.log('✅ Video track found after', (pollAttempts + 1) * pollInterval, 'ms, Track ID:', videoTrack.getTrackId())
                     remoteVideoTrack.value = videoTrack
                     remoteUid.value = remoteUser.uid
                     trackFound = true
-                    console.log('✓ Remote video track set successfully')
+                    console.log('✅ Remote video track set successfully - track will play via watcher in DashboardView')
                   }
                 }
                 if (mediaType === 'audio') {
                   const audioTrack = remoteUser.audioTrack
                   if (audioTrack) {
-                    console.log('✓ Audio track found after', (pollAttempts + 1) * pollInterval, 'ms, Track ID:', audioTrack.getTrackId())
+                    console.log('✅ Audio track found after', (pollAttempts + 1) * pollInterval, 'ms, Track ID:', audioTrack.getTrackId())
                     remoteAudioTrack.value = audioTrack
-                    audioTrack.play()
-                    trackFound = true
-                    console.log('✓ Remote audio track set and playing')
+                    try {
+                      await audioTrack.play()
+                      trackFound = true
+                      console.log('✅ Remote audio track set and playing successfully')
+                    } catch (playErr) {
+                      console.error('❌ Failed to play audio track:', playErr)
+                      // Track is set even if play fails - browser autoplay restrictions might prevent it
+                      trackFound = true
+                    }
                   }
                 }
               }
