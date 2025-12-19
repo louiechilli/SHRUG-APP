@@ -10,6 +10,7 @@ RUN apk add --no-cache \
     zip \
     unzip \
     sqlite \
+    sqlite-dev \
     oniguruma-dev \
     postgresql-dev
 
