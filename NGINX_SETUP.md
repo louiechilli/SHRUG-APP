@@ -141,3 +141,4 @@ VITE_WS_URL=wss://getshrug.app:8080
 - [ ] Security headers enabled
 - [ ] Monitoring/logging set up
 
+

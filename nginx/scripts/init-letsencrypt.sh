@@ -15,7 +15,7 @@ email="admin@getshrug.app" # Change this to your email
 staging=0 # Set to 1 if you're testing your setup to avoid hitting request limits
 
 if [ -d "$data_path" ]; then
-  read -p "Existing data found for $domains. Continue and replace existing certificate? (y/N) " decision
+  read -p "Existing data found for ${domains[*]}. Continue and replace existing certificate? (y/N) " decision
   if [ "$decision" != "Y" ] && [ "$decision" != "y" ]; then
     exit
   fi
@@ -29,28 +29,12 @@ if [ ! -e "$data_path/conf/options-ssl-nginx.conf" ] || [ ! -e "$data_path/conf/
   echo
 fi
 
-echo "### Creating dummy certificate for $domains ..."
-path="/etc/letsencrypt/live/$domains"
-mkdir -p "$data_path/conf/live/$domains"
-docker compose -f docker-compose.prod.yml run --rm --entrypoint "\
-  openssl req -x509 -nodes -newkey rsa:$rsa_key_size -days 1\
-    -keyout '/etc/letsencrypt/live/$domains/privkey.pem' \
-    -out '/etc/letsencrypt/live/$domains/fullchain.pem' \
-    -subj '/CN=localhost'" certbot
+echo "### Ensuring nginx is running with HTTP-only config ..."
+# Start nginx with HTTP-only config (should already be running, but ensure it is)
+docker compose -f docker-compose.prod.yml up -d nginx-proxy
 echo
 
-echo "### Starting nginx ..."
-docker compose -f docker-compose.prod.yml up --force-recreate -d nginx-proxy
-echo
-
-echo "### Deleting dummy certificate for $domains ..."
-docker compose -f docker-compose.prod.yml run --rm --entrypoint "\
-  rm -Rf /etc/letsencrypt/live/$domains && \
-  rm -Rf /etc/letsencrypt/archive/$domains && \
-  rm -Rf /etc/letsencrypt/renewal/$domains.conf" certbot
-echo
-
-echo "### Requesting Let's Encrypt certificate for $domains ..."
+echo "### Requesting Let's Encrypt certificate for ${domains[*]} ..."
 #Join $domains to -d args
 domain_args=""
 for domain in "${domains[@]}"; do
@@ -78,4 +62,12 @@ echo
 
 echo "### Reloading nginx ..."
 docker compose -f docker-compose.prod.yml exec nginx-proxy nginx -s reload
+echo
+
+echo "### IMPORTANT: Next steps ..."
+echo "1. Certificates have been successfully obtained!"
+echo "2. Update docker-compose.prod.yml to use nginx.conf instead of nginx-http-only.conf"
+echo "3. Restart nginx-proxy: docker compose -f docker-compose.prod.yml up -d --force-recreate nginx-proxy"
+echo "4. Set Cloudflare SSL/TLS mode to 'Full' or 'Full (strict)'"
+echo ""
 
