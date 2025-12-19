@@ -9,14 +9,19 @@ const getWebSocketUrl = () => {
   if (isProduction) {
     // In production, use wss://getshrug.app/ws (port 443 via nginx)
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    return `${protocol}//${window.location.hostname}/ws`
+    const url = `${protocol}//${window.location.hostname}/ws`
+    console.log('WebSocket URL (production):', url)
+    return url
   } else {
     // In development, use the env variable or default to localhost:8080
-    return envUrl || 'ws://localhost:8080'
+    const url = envUrl || 'ws://localhost:8080'
+    console.log('WebSocket URL (development):', url)
+    return url
   }
 }
 
-const WS_URL = getWebSocketUrl()
+// Get URL dynamically (not at module load time) to ensure window.location is available
+let WS_URL = getWebSocketUrl()
 
 export type SignalingMessage = 
   | { type: 'join'; userId: string; gender: string; genderPreference: string }
@@ -39,7 +44,11 @@ export function useSignaling() {
 
   function connect(userId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      socket.value = new WebSocket(`${WS_URL}?userId=${userId}`)
+      // Recalculate URL in case it wasn't available at module load
+      WS_URL = getWebSocketUrl()
+      const fullUrl = `${WS_URL}?userId=${userId}`
+      console.log('Connecting to WebSocket:', fullUrl)
+      socket.value = new WebSocket(fullUrl)
 
       socket.value.onopen = () => {
         connected.value = true
