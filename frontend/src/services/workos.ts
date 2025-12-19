@@ -66,7 +66,9 @@ export async function handleCallback(code: string, state: string): Promise<{ use
 
   // Exchange the code for tokens via your backend
   // WorkOS requires server-side token exchange for security
-  const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/workos/callback`, {
+  const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.getshrug.app/api/v1'
+  console.log('WorkOS Callback API URL:', apiUrl)
+  const response = await fetch(`${apiUrl}/auth/workos/callback`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

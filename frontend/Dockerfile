@@ -18,25 +18,39 @@ ARG VITE_WS_URL
 ARG VITE_WORKOS_CLIENT_ID
 ARG VITE_WORKOS_REDIRECT_URI
 
-# Debug: Print build args (remove in production if sensitive)
-RUN echo "Build args:" && \
-    echo "VITE_API_BASE_URL=${VITE_API_BASE_URL}" && \
-    echo "VITE_WS_URL=${VITE_WS_URL}" && \
-    echo "VITE_WORKOS_CLIENT_ID=${VITE_WORKOS_CLIENT_ID:0:20}..." && \
-    echo "VITE_WORKOS_REDIRECT_URI=${VITE_WORKOS_REDIRECT_URI}"
-
+# Set environment variables for Vite build
+# Vite only reads variables that start with VITE_ and are available as ENV vars
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_WS_URL=$VITE_WS_URL
 ENV VITE_WORKOS_CLIENT_ID=$VITE_WORKOS_CLIENT_ID
 ENV VITE_WORKOS_REDIRECT_URI=$VITE_WORKOS_REDIRECT_URI
 
-# Verify environment variables are set before build
-RUN if [ -z "$VITE_WORKOS_CLIENT_ID" ]; then \
+# Debug: Print environment variables before build
+RUN echo "=== Environment Variables for Vite Build ===" && \
+    echo "VITE_API_BASE_URL=${VITE_API_BASE_URL}" && \
+    echo "VITE_WS_URL=${VITE_WS_URL}" && \
+    echo "VITE_WORKOS_CLIENT_ID=${VITE_WORKOS_CLIENT_ID}" && \
+    echo "VITE_WORKOS_REDIRECT_URI=${VITE_WORKOS_REDIRECT_URI}" && \
+    echo "==========================================="
+
+# Verify critical environment variables are set
+RUN if [ -z "$VITE_API_BASE_URL" ]; then \
+      echo "ERROR: VITE_API_BASE_URL is not set!" && exit 1; \
+    fi && \
+    if [ -z "$VITE_WORKOS_CLIENT_ID" ]; then \
       echo "ERROR: VITE_WORKOS_CLIENT_ID is not set!" && exit 1; \
     fi
 
 # Build for production
 RUN npm run build
+
+# Verify the build output contains the correct URLs
+RUN echo "=== Verifying build output ===" && \
+    if grep -r "localhost:8000" /app/dist/assets/*.js 2>/dev/null; then \
+      echo "WARNING: localhost URLs found in build!"; \
+    else \
+      echo "✅ No localhost URLs found in build"; \
+    fi
 
 # Production stage with nginx
 FROM nginx:alpine AS production
